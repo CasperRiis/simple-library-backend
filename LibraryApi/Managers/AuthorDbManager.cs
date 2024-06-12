@@ -27,7 +27,7 @@ public class AuthorDbManager : IAuthorService
 
     public async Task<Author> GetAuthor(string authorName)
     {
-        var author = await _context.Authors.FirstOrDefaultAsync(a => a.Name.ToLower().Contains(authorName.ToLower()));
+        var author = await _context.Authors.FirstOrDefaultAsync(a => a.Name!.ToLower().Contains(authorName.ToLower()));
         return author != null ? author : throw new ArgumentNullException(nameof(author));
     }
 
@@ -54,7 +54,12 @@ public class AuthorDbManager : IAuthorService
 
     public async Task DeleteAuthor(int id)
     {
-        _context.Authors.Remove(new Author { Id = id });
+        var author = await _context.Authors.FindAsync(id);
+        if (author == null)
+        {
+            throw new ArgumentNullException(nameof(author));
+        }
+        _context.Authors.Remove(author);
         await _context.SaveChangesAsync();
     }
 

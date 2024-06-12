@@ -26,7 +26,7 @@ public class BookDbManager : IBookService
 
     public async Task<Book> GetBook(string bookTitle)
     {
-        var book = await _context.Books.FirstOrDefaultAsync(a => a.Title.ToLower().Contains(bookTitle.ToLower()));
+        var book = await _context.Books.FirstOrDefaultAsync(a => a.Title!.ToLower().Contains(bookTitle.ToLower()));
         return book != null ? book : throw new ArgumentNullException(nameof(book));
     }
 
@@ -48,7 +48,12 @@ public class BookDbManager : IBookService
 
     public async Task DeleteBook(int id)
     {
-        _context.Books.Remove(new Book { Id = id });
+        var book = await _context.Books.FindAsync(id);
+        if (book == null)
+        {
+            throw new ArgumentNullException(nameof(book));
+        }
+        _context.Books.Remove(book);
         await _context.SaveChangesAsync();
     }
 
