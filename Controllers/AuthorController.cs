@@ -25,8 +25,9 @@ public class AuthorController : ControllerBase
             var authors = await _authorService.GetAuthors();
             var results = authors.Skip(startId).Take(10);
             var count = authors.Count();
+            var next = startId + 10;
 
-            return Ok(new ArrayResponse<Author> { Count = count, Results = results });
+            return Ok(new ArrayResponse<Author> { Count = count, Next = next, Results = results });
         }
         catch (Exception e)
         {

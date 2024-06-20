@@ -2,6 +2,7 @@ using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace LibraryApi.Controllers;
 
@@ -25,8 +26,9 @@ public class BookController : ControllerBase
             var books = await _bookService.GetBooks();
             var results = books.Skip(startId).Take(10);
             var count = books.Count();
+            var next = startId + 10;
 
-            return Ok(new ArrayResponse<Book> { Count = count, Results = results });
+            return Ok(new ArrayResponse<Book> { Count = count, Next = next, Results = results });
         }
         catch (Exception e)
         {
