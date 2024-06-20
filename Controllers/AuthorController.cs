@@ -23,7 +23,7 @@ public class AuthorController : ControllerBase
         try
         {
             var authors = await _authorService.GetAuthors();
-            var results = authors.Skip(startId).Take(20);
+            var results = authors.Skip(startId).Take(10);
             var count = authors.Count();
 
             return Ok(new ArrayResponse<Author> { Count = count, Results = results });
