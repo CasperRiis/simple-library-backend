@@ -13,9 +13,21 @@ public class BookDbManager : IBookService
         _context = context;
     }
 
-    public async Task<IEnumerable<Book>> GetBooks()
+    public async Task<PagedList<Book>> GetBooks(int page, int pageSize)
     {
-        return await _context.Books.ToListAsync();
+        var books = await _context.Books
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var nextPage = books.Count == pageSize ? (int?)page + 1 : null;
+
+        return new PagedList<Book>
+        {
+            Count = books.Count,
+            Results = books,
+            Next = nextPage
+        };
     }
 
     public async Task<Book> GetBook(int id)

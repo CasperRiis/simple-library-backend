@@ -14,9 +14,21 @@ public class AuthorDbManager : IAuthorService
         _context = context;
     }
 
-    public async Task<IEnumerable<Author>> GetAuthors()
+    public async Task<PagedList<Author>> GetAuthors(int page, int pageSize)
     {
-        return await _context.Authors.ToListAsync();
+        var authors = await _context.Authors
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var nextPage = authors.Count == pageSize ? (int?)page + 1 : null;
+
+        return new PagedList<Author>
+        {
+            Count = authors.Count,
+            Results = authors,
+            Next = nextPage
+        };
     }
 
     public async Task<Author> GetAuthor(int id)

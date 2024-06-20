@@ -4,7 +4,7 @@ namespace LibraryApi.Services
 {
     public interface IAuthorService
     {
-        Task<IEnumerable<Author>> GetAuthors();
+        Task<PagedList<Author>> GetAuthors(int page, int pageSize);
         Task<Author> GetAuthor(int id);
         Task<Author> GetAuthor(string authorName);
         Task<Author> AddAuthor(Author author);

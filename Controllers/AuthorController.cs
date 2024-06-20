@@ -18,16 +18,12 @@ public class AuthorController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<ArrayResponse<Author>>> GetAuthors([FromQuery] int startId)
+    public async Task<IActionResult> GetAuthors([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         try
         {
-            var authors = await _authorService.GetAuthors();
-            var results = authors.Skip(startId).Take(10);
-            var count = authors.Count();
-            var next = startId + 10;
-
-            return Ok(new ArrayResponse<Author> { Count = count, Next = next, Results = results });
+            var authors = await _authorService.GetAuthors(page, pageSize);
+            return Ok(authors);
         }
         catch (Exception e)
         {

@@ -19,16 +19,12 @@ public class BookController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<ArrayResponse<Book>>> GetBooks([FromQuery] int startId)
+    public async Task<IActionResult> GetBooks([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         try
         {
-            var books = await _bookService.GetBooks();
-            var results = books.Skip(startId).Take(10);
-            var count = books.Count();
-            var next = startId + 10;
-
-            return Ok(new ArrayResponse<Book> { Count = count, Next = next, Results = results });
+            var books = await _bookService.GetBooks(page, pageSize);
+            return Ok(books);
         }
         catch (Exception e)
         {
