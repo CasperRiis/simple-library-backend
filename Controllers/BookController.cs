@@ -24,7 +24,7 @@ public class BookController : ControllerBase
         {
             var books = await _bookService.GetBooks();
             var results = books.Skip(startId).Take(20);
-            var count = results.Count();
+            var count = books.Count();
 
             return Ok(new ArrayResponse<Book> { Count = count, Results = results });
         }

@@ -24,7 +24,7 @@ public class AuthorController : ControllerBase
         {
             var authors = await _authorService.GetAuthors();
             var results = authors.Skip(startId).Take(20);
-            var count = results.Count();
+            var count = authors.Count();
 
             return Ok(new ArrayResponse<Author> { Count = count, Results = results });
         }
