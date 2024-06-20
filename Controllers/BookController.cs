@@ -18,12 +18,15 @@ public class BookController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
+    public async Task<ActionResult<ArrayResponse<Book>>> GetBooks([FromQuery] int startId)
     {
         try
         {
             var books = await _bookService.GetBooks();
-            return Ok(books);
+            var results = books.Skip(startId).Take(20);
+            var count = results.Count();
+
+            return Ok(new ArrayResponse<Book> { Count = count, Results = results });
         }
         catch (Exception e)
         {
