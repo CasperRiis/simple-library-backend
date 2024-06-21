@@ -1,11 +1,14 @@
+using System.Security.Claims;
+using System.Text;
+using LibraryApi.Helpers;
 using LibraryApi.Managers;
-using LibraryApi.Middleware;
 using LibraryApi.Models;
 using LibraryApi.Services;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,16 +21,19 @@ builder.Services.AddSwaggerGen();
 
 string cosmosConnectionString;
 string cosmosDbName;
+string jwtTokenSecret;
 
 if (builder.Environment.IsDevelopment()) //pull secrets from local storage or Azure configuration
 {
     cosmosConnectionString = builder.Configuration["cosmosConnectionString"] ?? throw new ArgumentNullException();
     cosmosDbName = builder.Configuration["cosmosDbName"] ?? throw new ArgumentNullException();
+    jwtTokenSecret = builder.Configuration["jwtTokenSecret"] ?? throw new ArgumentNullException();
 }
 else
 {
     cosmosConnectionString = Environment.GetEnvironmentVariable("cosmosConnectionString") ?? throw new ArgumentNullException();
     cosmosDbName = Environment.GetEnvironmentVariable("cosmosDbName") ?? throw new ArgumentNullException();
+    jwtTokenSecret = Environment.GetEnvironmentVariable("jwtTokenSecret") ?? throw new ArgumentNullException();
 }
 
 builder.Services.AddDbContext<BookDbContext>(options => options.UseCosmos(cosmosConnectionString, cosmosDbName));
@@ -36,34 +42,44 @@ builder.Services.AddScoped<IBookService, BookDbManager>();
 builder.Services.AddDbContext<AuthorDbContext>(options => options.UseCosmos(cosmosConnectionString, cosmosDbName));
 builder.Services.AddScoped<IAuthorService, AuthorDbManager>();
 
+builder.Services.AddDbContext<AccountDbContext>(options => options.UseCosmos(cosmosConnectionString, cosmosDbName));
+builder.Services.AddScoped<IAccountService, AccountDbManager>();
+
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
     {
+        Description = "Bearer { TOKEN }",
         In = ParameterLocation.Header,
-        Name = "x-api-key",
-        Type = SecuritySchemeType.ApiKey
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
     });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "ApiKey"
-                }
-            },
-            new string[] {}
-        }
-    });
+    options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
-builder.Services.AddAuthentication()
-    .AddScheme<KeyAuthSchemeOptions, KeyAuthSchemeHandler>("ApiKey", options => { });
+builder.Services.AddAuthentication(cfg =>
+{
+    cfg.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    cfg.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    cfg.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            RoleClaimType = ClaimTypes.Role,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtTokenSecret)),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
+builder.Services.AddScoped(sp => new AuthHelper(jwtTokenSecret));
 
 builder.Services.AddCors(options =>
 {
@@ -78,8 +94,9 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<BookDbContext>();
-    dbContext.Database.EnsureCreated();
+    scope.ServiceProvider.GetRequiredService<BookDbContext>().Database.EnsureCreated();
+    scope.ServiceProvider.GetRequiredService<AuthorDbContext>().Database.EnsureCreated();
+    scope.ServiceProvider.GetRequiredService<AccountDbContext>().Database.EnsureCreated();
 }
 
 app.UseSwagger();

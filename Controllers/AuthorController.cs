@@ -7,7 +7,6 @@ namespace LibraryApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[Authorize]
 public class AuthorController : ControllerBase
 {
     private readonly IAuthorService _authorService;
@@ -67,7 +66,7 @@ public class AuthorController : ControllerBase
         }
     }
 
-    [HttpPost]
+    [HttpPost, Authorize(Roles = "Admin")]
     public async Task<ActionResult<Author>> AddAuthor(Author author)
     {
         try
@@ -87,7 +86,7 @@ public class AuthorController : ControllerBase
         }
     }
 
-    [HttpPut]
+    [HttpPut, Authorize(Roles = "Admin")]
     public async Task<ActionResult<Book>> UpdateAuthor([FromBody] Author author)
     {
         try
@@ -101,7 +100,7 @@ public class AuthorController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id}"), Authorize(Roles = "Admin")]
     public async Task<ActionResult> DeleteAuthor(int id)
     {
         try

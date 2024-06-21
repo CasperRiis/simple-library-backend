@@ -2,13 +2,11 @@ using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace LibraryApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[Authorize]
 public class BookController : ControllerBase
 {
     private readonly IBookService _bookService;
@@ -68,7 +66,7 @@ public class BookController : ControllerBase
         }
     }
 
-    [HttpPost]
+    [HttpPost, Authorize(Roles = "Admin")]
     public async Task<ActionResult<Book>> AddBook(Book book)
     {
         try
@@ -88,7 +86,7 @@ public class BookController : ControllerBase
         }
     }
 
-    [HttpPut]
+    [HttpPut, Authorize(Roles = "Admin")]
     public async Task<ActionResult<Book>> UpdateBook([FromBody] Book book)
     {
         try
@@ -102,7 +100,7 @@ public class BookController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id}"), Authorize(Roles = "Admin")]
     public async Task<ActionResult> DeleteBook(int id)
     {
         try
