@@ -3,15 +3,15 @@ using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Authorization;
 
-namespace FadeFactory_Accounts.Controllers;
+namespace FadeFactory_Account.Controllers;
 
-[Route("api/[controller]")]
+[Route("[controller]")]
 [ApiController]
-public class AccountsController : ControllerBase
+public class AccountController : ControllerBase
 {
     private readonly IAccountService _service;
 
-    public AccountsController(IAccountService service)
+    public AccountController(IAccountService service)
     {
         _service = service;
     }
@@ -24,12 +24,12 @@ public class AccountsController : ControllerBase
         return Ok(account);
     }
 
-    [HttpGet("getAll"), Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<Account>>> GetAllAccounts()
+    [HttpGet(), Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<Account>>> GetAccounts()
     {
         try
         {
-            var accounts = await _service.GetAllAccounts();
+            var accounts = await _service.GetAccounts();
             return Ok(accounts);
         }
         catch (Exception e)

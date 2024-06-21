@@ -48,7 +48,7 @@ public class AccountDbManager : IAccountService
         return result;
     }
 
-    public async Task<IEnumerable<Account>> GetAllAccounts()
+    public async Task<IEnumerable<Account>> GetAccounts()
     {
         return await _context.Accounts.ToListAsync();
     }
