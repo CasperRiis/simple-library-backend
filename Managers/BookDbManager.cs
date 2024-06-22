@@ -13,9 +13,16 @@ public class BookDbManager : IBookService
         _context = context;
     }
 
-    public async Task<PagedList<Book>> GetBooks(int page, int pageSize)
+    public async Task<PagedList<Book>> GetBooks(int page, int pageSize, string? searchGenre)
     {
-        var books = await _context.Books
+        IQueryable<Book> booksQuery = _context.Books;
+
+        if (!string.IsNullOrEmpty(searchGenre))
+        {
+            booksQuery = booksQuery.Where(b => b.Genre!.Contains(searchGenre));
+        }
+
+        var books = await booksQuery
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

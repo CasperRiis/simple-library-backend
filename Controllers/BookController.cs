@@ -17,11 +17,11 @@ public class BookController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetBooks([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetBooks([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchGenre = null)
     {
         try
         {
-            var books = await _bookService.GetBooks(page, pageSize);
+            var books = await _bookService.GetBooks(page, pageSize, searchGenre);
             return Ok(books);
         }
         catch (Exception e)
