@@ -99,8 +99,22 @@ using (var scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<AccountDbContext>().Database.EnsureCreated();
 }
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.DocumentTitle = "Lib-Mgmt-API Development Swagger";
+    });
+}
+else
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.DocumentTitle = "Lib-Mgmt-API Swagger";
+    });
+}
 
 app.UseHttpsRedirection();
 
