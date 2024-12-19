@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using LibraryApi.Models;
+using LibraryApi.Entities;
 using Microsoft.IdentityModel.Tokens;
 
 namespace LibraryApi.Helpers;
@@ -38,7 +38,7 @@ public class AuthHelper
     {
         var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, account.AccountId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
                 new Claim(ClaimTypes.Name, account.Username!.ToString()),
                 new Claim(ClaimTypes.Role, account.IsAdmin ? "Admin" : "User")
             };

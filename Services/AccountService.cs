@@ -1,51 +1,20 @@
-using LibraryApi.Models;
-using LibraryApi.Services;
+using LibraryApi.Entities;
+using LibraryApi.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using LibraryApi.Helpers;
+using LibraryApi.Models;
 
 namespace LibraryApi.Managers;
 
-public class AccountDbManager : IAccountService
+public class AccountService : GenericService<Account>, IAccountService
 {
     private readonly AuthHelper _authHelper;
-    private readonly AccountDbContext _context;
+    private readonly DatabaseContext _context;
 
-    public AccountDbManager(AccountDbContext context, AuthHelper authHelper)
+    public AccountService(DatabaseContext context, AuthHelper authHelper) : base(context)
     {
         _authHelper = authHelper;
         _context = context;
-    }
-
-    public async Task<Account> CreateAccount(AccountDTO accountDTO)
-    {
-        if (accountDTO.Username == null || accountDTO.Username == null || accountDTO.Password == null)
-            throw new Exception("A string is null.");
-
-        int dbSize = (await _context.Accounts.ToListAsync()).LastOrDefault()?.AccountId ?? 0;
-        accountDTO.AccountId = dbSize + 1;
-
-        if (_context.Accounts.Count(a => a.Username == accountDTO.Username) > 0)
-            throw new Exception("Account with username already exists.");
-
-        accountDTO.IsAdmin = false;
-
-        var account = accountDTO.Adapt();
-        var result = _context.Accounts.Add(account);
-        await _context.SaveChangesAsync();
-        return result.Entity;
-    }
-
-    public async Task DeleteAccount(int AccountId)
-    {
-        _context.Accounts.Remove(new Account { AccountId = AccountId });
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task<Account> GetAccount(int AccountId)
-    {
-        var result = await _context.Accounts.FirstOrDefaultAsync(a => a.AccountId == AccountId);
-        if (result == null) throw new Exception("Account not found.");
-        return result;
     }
 
     public async Task<IEnumerable<Account>> GetAccounts()
@@ -53,15 +22,41 @@ public class AccountDbManager : IAccountService
         return await _context.Accounts.ToListAsync();
     }
 
+    public async Task<Account> GetAccount(int AccountId)
+    {
+        return await base.GetItem(AccountId);
+    }
+
+    public async Task<Account> CreateAccount(AccountDTO accountDTO)
+    {
+        if (string.IsNullOrEmpty(accountDTO.Username))
+            throw new ArgumentException("Username is null or empty.", nameof(accountDTO.Username));
+
+        if (string.IsNullOrEmpty(accountDTO.Password))
+            throw new ArgumentException("Password is null or empty.", nameof(accountDTO.Password));
+
+        if (_context.Accounts.Count(a => a.Username == accountDTO.Username) > 0)
+            throw new Exception("Account with username already exists.");
+
+        //Ensure that no user created through API is admin
+        accountDTO.IsAdmin = false;
+
+        var account = accountDTO.Adapt();
+        var result = _context.Accounts.Add(account);
+        await _context.SaveChangesAsync();
+
+        return result.Entity;
+    }
+
     public async Task<Account> UpdateAccount(AccountDTO accountDTO)
     {
         var account = accountDTO.Adapt();
-        if (_context.Accounts.Count(a => a.Username == account.Username && a.AccountId != account.AccountId) > 0)
+        if (_context.Accounts.Count(a => a.Username == account.Username && a.Id != account.Id) > 0)
         {
             throw new Exception("Account with this username already exists.");
         }
 
-        var dbAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.AccountId == account.AccountId);
+        var dbAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == account.Id);
         if (dbAccount != null)
         {
             if (account.Username != null)
@@ -93,5 +88,10 @@ public class AccountDbManager : IAccountService
             throw new Exception("Invalid credentials.");
         }
         return _authHelper.CreateToken(account);
+    }
+
+    public async Task<Account> DeleteAccount(int AccountId)
+    {
+        return await base.DeleteItem(AccountId);
     }
 }

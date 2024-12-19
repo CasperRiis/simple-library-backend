@@ -1,3 +1,5 @@
+namespace LibraryApi.Models;
+
 public class PagedList<T>
 {
     public int? Count { get; set; }

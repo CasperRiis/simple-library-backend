@@ -1,31 +1,29 @@
 using LibraryApi.Helpers;
-using Newtonsoft.Json;
+using LibraryApi.Entities;
 
 namespace LibraryApi.Models;
 
-public class AccountDTO : AccountParent
+public class AccountDTO : BaseAccount
 {
     private readonly AuthHelper _authHelper = AuthHelper.Instance;
 
-    [JsonProperty("password")]
     public string? Password { get; set; }
 
     public Account Adapt()
     {
         byte[]? passwordHash, passwordSalt;
-        if (Password != null)
+        if (!string.IsNullOrEmpty(Password))
         {
             _authHelper.CreatePasswordHash(Password, out passwordHash, out passwordSalt);
         }
         else
         {
-            passwordHash = null;
-            passwordSalt = null;
+            throw new Exception("Password is null.");
         }
 
         return new Account
         {
-            AccountId = AccountId,
+            Id = Id,
             Username = Username,
             PasswordHash = passwordHash,
             PasswordSalt = passwordSalt,

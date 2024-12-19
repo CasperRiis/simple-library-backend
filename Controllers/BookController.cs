@@ -1,5 +1,7 @@
+using AutoMapper;
+using LibraryApi.Entities;
+using LibraryApi.Interfaces;
 using LibraryApi.Models;
-using LibraryApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,18 +12,20 @@ namespace LibraryApi.Controllers;
 public class BookController : ControllerBase
 {
     private readonly IBookService _bookService;
+    private readonly IMapper _mapper;
 
-    public BookController(IBookService bookService)
+    public BookController(IBookService bookService, IMapper mapper)
     {
         _bookService = bookService;
+        _mapper = mapper;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetBooks([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchGenre = null)
+    public async Task<IActionResult> GetBooks([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchParameter = null, [FromQuery] string searchProperty = "Genre")
     {
         try
         {
-            var books = await _bookService.GetBooks(page, pageSize, searchGenre);
+            var books = await _bookService.GetBooks(page, pageSize, searchParameter, searchProperty);
             return Ok(books);
         }
         catch (Exception e)
@@ -31,7 +35,7 @@ public class BookController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Book>> GetBook(int id)
+    public async Task<ActionResult<BookDTO_NestedAuthor>> GetBook(int id)
     {
         try
         {
@@ -67,8 +71,9 @@ public class BookController : ControllerBase
     }
 
     [HttpPost, Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Book>> AddBook(Book book)
+    public async Task<ActionResult<Book>> AddBook(BookDTO bookDTO)
     {
+        var book = _mapper.Map<Book>(bookDTO);
         try
         {
             var createdBook = await _bookService.AddBook(book);
@@ -87,8 +92,9 @@ public class BookController : ControllerBase
     }
 
     [HttpPut, Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Book>> UpdateBook([FromBody] Book book)
+    public async Task<ActionResult<Book>> UpdateBook([FromBody] BookDTO bookDTO)
     {
+        var book = _mapper.Map<Book>(bookDTO);
         try
         {
             var updatedBook = await _bookService.UpdateBook(book);
@@ -101,12 +107,12 @@ public class BookController : ControllerBase
     }
 
     [HttpDelete("{id}"), Authorize(Roles = "Admin")]
-    public async Task<ActionResult> DeleteBook(int id)
+    public async Task<ActionResult<BookDTO>> DeleteBook(int id)
     {
         try
         {
-            await _bookService.DeleteBook(id);
-            return Ok();
+            var book = await _bookService.DeleteBook(id);
+            return Ok(book);
         }
         catch (Exception e)
         {

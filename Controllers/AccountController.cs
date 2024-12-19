@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using LibraryApi.Models;
-using LibraryApi.Services;
+using LibraryApi.Entities;
+using LibraryApi.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using LibraryApi.Models;
+using AutoMapper;
 
 namespace FadeFactory_Account.Controllers;
 
@@ -20,7 +22,7 @@ public class AccountController : ControllerBase
     public async Task<ActionResult<Account>> GetAccount(int AccountId)
     {
         Account account = await _service.GetAccount(AccountId);
-        if (account.AccountId == -1) return NotFound($"No account with ID '{AccountId}'");
+        if (account.Id == -1) return NotFound($"No account with ID '{AccountId}'");
         return Ok(account);
     }
 
@@ -45,7 +47,7 @@ public class AccountController : ControllerBase
         {
             var createdAccount = await _service.CreateAccount(account);
             string host = HttpContext.Request.Host.Value;
-            string uri = $"https://{host}/api/Accounts/{createdAccount.AccountId}";
+            string uri = $"https://{host}/api/Accounts/{createdAccount.Id}";
             return Created(uri, createdAccount);
         }
         catch (Exception ex)

@@ -2,48 +2,48 @@ using System.Security.Claims;
 using System.Text;
 using LibraryApi.Helpers;
 using LibraryApi.Managers;
-using LibraryApi.Models;
-using LibraryApi.Services;
+using LibraryApi.Entities;
+using LibraryApi.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
+using Microsoft.Data.SqlClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddAutoMapper(typeof(Program)); //AutoMapper configuration
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-string cosmosConnectionString;
-string cosmosDbName;
+string connectionString;
 string jwtTokenSecret;
 
 if (builder.Environment.IsDevelopment()) //pull secrets from local storage or Azure configuration
 {
-    cosmosConnectionString = builder.Configuration["cosmosConnectionString"] ?? throw new ArgumentNullException();
-    cosmosDbName = builder.Configuration["cosmosDbName"] ?? throw new ArgumentNullException();
-    jwtTokenSecret = builder.Configuration["jwtTokenSecret"] ?? throw new ArgumentNullException();
+    connectionString = builder.Configuration.GetValue<string>("MYSQL_CONNECTION_STRING") ?? throw new ArgumentNullException();
+    jwtTokenSecret = builder.Configuration.GetValue<string>("JWT_TOKEN_SECRET") ?? throw new ArgumentNullException();
 }
 else
 {
-    cosmosConnectionString = Environment.GetEnvironmentVariable("cosmosConnectionString") ?? throw new ArgumentNullException();
-    cosmosDbName = Environment.GetEnvironmentVariable("cosmosDbName") ?? throw new ArgumentNullException();
-    jwtTokenSecret = Environment.GetEnvironmentVariable("jwtTokenSecret") ?? throw new ArgumentNullException();
+    connectionString = Environment.GetEnvironmentVariable("MYSQL_CONNECTION_STRING") ?? throw new ArgumentNullException();
+    jwtTokenSecret = Environment.GetEnvironmentVariable("JWT_TOKEN_SECRET") ?? throw new ArgumentNullException();
 }
 
-builder.Services.AddDbContext<BookDbContext>(options => options.UseCosmos(cosmosConnectionString, cosmosDbName));
-builder.Services.AddScoped<IBookService, BookDbManager>();
+builder.Services.AddDbContext<DatabaseContext>(options =>
+{
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+    //options.UseSqlServer(connectionString);
+});
 
-builder.Services.AddDbContext<AuthorDbContext>(options => options.UseCosmos(cosmosConnectionString, cosmosDbName));
-builder.Services.AddScoped<IAuthorService, AuthorDbManager>();
-
-builder.Services.AddDbContext<AccountDbContext>(options => options.UseCosmos(cosmosConnectionString, cosmosDbName));
-builder.Services.AddScoped<IAccountService, AccountDbManager>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IAuthorService, AuthorService>();
+builder.Services.AddScoped<IBookService, BookService>();
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -94,9 +94,24 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<BookDbContext>().Database.EnsureCreated();
-    scope.ServiceProvider.GetRequiredService<AuthorDbContext>().Database.EnsureCreated();
-    scope.ServiceProvider.GetRequiredService<AccountDbContext>().Database.EnsureCreated();
+    var dbContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+    var retryCount = 5;
+    var delay = TimeSpan.FromSeconds(10);
+
+    for (int i = 0; i < retryCount; i++)
+    {
+        try
+        {
+            dbContext.Database.Migrate(); //Auto perform migrations
+            DbSeeder.UpsertSeed(dbContext); //Auto seed database
+            break;
+        }
+        catch (SqlException)
+        {
+            if (i == retryCount - 1) throw;
+            Thread.Sleep(delay);
+        }
+    }
 }
 
 if (app.Environment.IsDevelopment())
@@ -104,6 +119,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Lib-Mgmt-API Development Swagger");
+        c.RoutePrefix = string.Empty;
         c.DocumentTitle = "Lib-Mgmt-API Development Swagger";
     });
 }
@@ -112,6 +129,8 @@ else
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Lib-Mgmt-API Production Swagger");
+        c.RoutePrefix = string.Empty;
         c.DocumentTitle = "Lib-Mgmt-API Swagger";
     });
 }

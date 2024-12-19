@@ -1,5 +1,7 @@
+using AutoMapper;
+using LibraryApi.Entities;
+using LibraryApi.Interfaces;
 using LibraryApi.Models;
-using LibraryApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,18 +12,20 @@ namespace LibraryApi.Controllers;
 public class AuthorController : ControllerBase
 {
     private readonly IAuthorService _authorService;
+    private readonly IMapper _mapper;
 
-    public AuthorController(IAuthorService authorService)
+    public AuthorController(IAuthorService authorService, IMapper mapper)
     {
         _authorService = authorService;
+        _mapper = mapper;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAuthors([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAuthors([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchParameter = null, [FromQuery] string searchProperty = "Name")
     {
         try
         {
-            var authors = await _authorService.GetAuthors(page, pageSize);
+            var authors = await _authorService.GetAuthors(page, pageSize, searchParameter, searchProperty);
             return Ok(authors);
         }
         catch (Exception e)
@@ -31,7 +35,7 @@ public class AuthorController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Author>> GetAuthor(int id)
+    public async Task<ActionResult<AuthorDTO_NestedBooks>> GetAuthor(int id)
     {
         try
         {
@@ -67,8 +71,9 @@ public class AuthorController : ControllerBase
     }
 
     [HttpPost, Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Author>> AddAuthor(Author author)
+    public async Task<ActionResult<Author>> AddAuthor(AuthorDTO authorDTO)
     {
+        var author = _mapper.Map<Author>(authorDTO);
         try
         {
             var createdAuthor = await _authorService.AddAuthor(author);
@@ -87,8 +92,9 @@ public class AuthorController : ControllerBase
     }
 
     [HttpPut, Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Book>> UpdateAuthor([FromBody] Author author)
+    public async Task<ActionResult<Book>> UpdateAuthor([FromBody] AuthorDTO authorDTO)
     {
+        var author = _mapper.Map<Author>(authorDTO);
         try
         {
             var updatedAuthor = await _authorService.UpdateAuthor(author);
@@ -101,12 +107,12 @@ public class AuthorController : ControllerBase
     }
 
     [HttpDelete("{id}"), Authorize(Roles = "Admin")]
-    public async Task<ActionResult> DeleteAuthor(int id)
+    public async Task<ActionResult<AuthorDTO>> DeleteAuthor(int id)
     {
         try
         {
-            await _authorService.DeleteAuthor(id);
-            return Ok();
+            var author = await _authorService.DeleteAuthor(id);
+            return Ok(author);
         }
         catch (Exception e)
         {
