@@ -1,0 +1,19 @@
+variable "subscription_id" {
+  type = string
+}
+
+variable "sql_user" {
+  type = string
+}
+
+variable "sql_password" {
+  type = string
+}
+
+variable "database_name" {
+  type = string
+}
+
+variable "jwt_token_secret" {
+  type = string
+}
