@@ -6,7 +6,7 @@ using AutoMapper;
 
 namespace LibraryApi.Managers;
 
-public class BookService : GenericService<Book>, IBookService
+public class BookService : GenericCRUDService<Book>, IBookService
 {
     private readonly DatabaseContext _context;
     private readonly IMapper _mapper;

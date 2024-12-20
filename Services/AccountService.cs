@@ -6,7 +6,7 @@ using LibraryApi.Models;
 
 namespace LibraryApi.Managers;
 
-public class AccountService : GenericService<Account>, IAccountService
+public class AccountService : GenericCRUDService<Account>, IAccountService
 {
     private readonly AuthHelper _authHelper;
     private readonly DatabaseContext _context;

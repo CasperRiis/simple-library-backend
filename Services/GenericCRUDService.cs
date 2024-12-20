@@ -1,16 +1,15 @@
 using LibraryApi.Models;
 using LibraryApi.Entities;
-using LibraryApi.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace LibraryApi.Managers;
 
-public class GenericService<T> where T : class //TODO: Change all calls to use nestable DTOs
+public class GenericCRUDService<T> where T : class
 {
     private readonly DatabaseContext _context;
 
-    public GenericService(DatabaseContext context)
+    public GenericCRUDService(DatabaseContext context)
     {
         _context = context;
     }

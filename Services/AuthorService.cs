@@ -7,7 +7,7 @@ using AutoMapper;
 
 namespace LibraryApi.Managers;
 
-public class AuthorService : GenericService<Author>, IAuthorService
+public class AuthorService : GenericCRUDService<Author>, IAuthorService
 {
     private readonly DatabaseContext _context;
     private readonly IMapper _mapper;
