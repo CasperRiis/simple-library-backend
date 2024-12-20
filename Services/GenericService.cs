@@ -15,14 +15,24 @@ public class GenericService<T> where T : class //TODO: Change all calls to use n
         _context = context;
     }
 
-    public async Task<PagedList<T>> GetItems(int page, int pageSize, string? searchParameter, string searchProperty, params Expression<Func<T, object>>[] includes)
+    private IQueryable<T> IncludeProperties(params Expression<Func<T, object>>[] includes)
     {
         IQueryable<T> query = _context.Set<T>();
 
-        foreach (var include in includes)
+        if (includes != null)
         {
-            query = query.Include(include);
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
         }
+
+        return query;
+    }
+
+    public async Task<PagedList<T>> GetItems(int page, int pageSize, string? searchParameter, string searchProperty, params Expression<Func<T, object>>[]? includes)
+    {
+        IQueryable<T> query = IncludeProperties(includes!);
 
         var property = typeof(T).GetProperty(searchProperty)
                             ?? throw new ArgumentNullException($"Property '{searchProperty}' does not exist on type '{typeof(T).Name}'");
@@ -47,69 +57,29 @@ public class GenericService<T> where T : class //TODO: Change all calls to use n
         };
     }
 
-    public async Task<PagedList<T>> GetItems(int page, int pageSize, string? searchParameter, string searchProperty)
+    public async Task<T> GetItem(int id, params Expression<Func<T, object>>[]? includes)
     {
-        var property = typeof(T).GetProperty(searchProperty)
-                            ?? throw new ArgumentNullException($"Property '{searchProperty}' does not exist on type '{typeof(T).Name}'");
+        IQueryable<T> query = IncludeProperties(includes!);
 
-        IQueryable<T> itemsQuery = _context.Set<T>();
-
-        if (!string.IsNullOrEmpty(searchParameter))
-        {
-            itemsQuery = itemsQuery.Where(a => EF.Property<string>(a, searchProperty).Contains(searchParameter));
-        }
-
-        var items = await itemsQuery
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        var nextPage = items.Count == pageSize ? (int?)page + 1 : null;
-
-        return new PagedList<T>
-        {
-            Count = items.Count,
-            Results = items,
-            Next = nextPage
-        };
-    }
-
-    public async Task<T> GetItem(int id, params Expression<Func<T, object>>[] includes)
-    {
-        IQueryable<T> query = _context.Set<T>();
-
-        foreach (var include in includes)
-        {
-            query = query.Include(include);
-        }
-
-        var parameter = Expression.Parameter(typeof(T), "e");
-        var property = Expression.Property(parameter, "id");
-        var constant = Expression.Constant(id);
-        var equality = Expression.Equal(property, constant);
-        var lambda = Expression.Lambda<Func<T, bool>>(equality, parameter);
-
-        var item = await query.SingleOrDefaultAsync(lambda);
+        var item = await query.SingleOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
         return item != null ? item : throw new ArgumentNullException(nameof(item));
     }
 
-    public async Task<T> GetItem(int id)
+    public async Task<T> GetItem(string itemName, string propertyName, params Expression<Func<T, object>>[]? includes)
     {
-        var item = await _context.Set<T>().FindAsync(id);
-        return item != null ? item : throw new ArgumentNullException(nameof(item));
-    }
+        IQueryable<T> query = IncludeProperties(includes!);
 
-    public async Task<T> GetItem(string itemName, string propertyName)
-    {
         var property = typeof(T).GetProperty(propertyName)
                             ?? throw new ArgumentNullException($"Property '{propertyName}' does not exist on type '{typeof(T).Name}'");
 
-        var item = await _context.Set<T>().FirstOrDefaultAsync(a => a.GetType().GetProperty(propertyName)!.GetValue(a)!.ToString()!.ToLower().Contains(itemName.ToLower()));
+        var item = await query.FirstOrDefaultAsync(a => a.GetType().GetProperty(propertyName)!.GetValue(a)!.ToString()!.ToLower().Contains(itemName.ToLower()));
         return item != null ? item : throw new ArgumentNullException(nameof(item));
     }
 
-    public async Task<T> AddItem(T item, string propertyName)
+    public async Task<T> AddItem(T item, string propertyName, params Expression<Func<T, object>>[]? includes)
     {
+        IQueryable<T> query = IncludeProperties(includes!);
+
         var property = typeof(T).GetProperty(propertyName)
                         ?? throw new ArgumentNullException($"Property '{propertyName}' does not exist on type '{typeof(T).Name}'");
 

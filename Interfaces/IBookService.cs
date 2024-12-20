@@ -7,8 +7,8 @@ namespace LibraryApi.Interfaces
     {
         Task<PagedList<BookDTO_NestedAuthor>> GetBooks(int page, int pageSize, string? searchParameter, string searchProperty = "Genre");
         Task<BookDTO_NestedAuthor> GetBook(int id);
-        Task<Book> GetBook(string bookTitle);
-        Task<Book> AddBook(Book book);
+        Task<BookDTO_NestedAuthor> GetBook(string bookTitle);
+        Task<BookDTO_NestedAuthor> AddBook(Book book);
         Task<Book> UpdateBook(Book book);
         Task<Book> DeleteBook(int id);
     }

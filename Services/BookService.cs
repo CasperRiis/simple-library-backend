@@ -37,18 +37,20 @@ public class BookService : GenericService<Book>, IBookService
         return _mapper.Map<BookDTO_NestedAuthor>(book);
     }
 
-    public async Task<Book> GetBook(string bookTitle)
+    public async Task<BookDTO_NestedAuthor> GetBook(string bookTitle)
     {
-        return await base.GetItem(bookTitle, "Title");
+        var book = await base.GetItem(bookTitle, "Title", book => book.Author!);
+        return _mapper.Map<BookDTO_NestedAuthor>(book);
     }
 
-    public async Task<Book> AddBook(Book book)
+    public async Task<BookDTO_NestedAuthor> AddBook(Book book)
     {
         if (await _context.Authors.FindAsync(book.AuthorId) == null)
         {
             throw new ArgumentException($"Author with id '{book.AuthorId}' does not exist");
         }
-        return await base.AddItem(book, "Title");
+        var returnBook = await base.AddItem(book, "Title", book => book.Author!);
+        return _mapper.Map<BookDTO_NestedAuthor>(returnBook);
     }
 
     public async Task<Book> UpdateBook(Book book)

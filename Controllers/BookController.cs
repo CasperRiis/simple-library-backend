@@ -53,7 +53,7 @@ public class BookController : ControllerBase
     }
 
     [HttpGet("title/{bookTitle}")]
-    public async Task<ActionResult<Book>> GetBook(string bookTitle)
+    public async Task<ActionResult<BookDTO_NestedAuthor>> GetBook(string bookTitle)
     {
         try
         {
@@ -71,7 +71,7 @@ public class BookController : ControllerBase
     }
 
     [HttpPost, Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Book>> AddBook(BookDTO bookDTO)
+    public async Task<ActionResult<BookDTO_NestedAuthor>> AddBook(BookDTO bookDTO)
     {
         var book = _mapper.Map<Book>(bookDTO);
         try
