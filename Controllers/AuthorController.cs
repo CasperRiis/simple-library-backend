@@ -52,26 +52,26 @@ public class AuthorController : ControllerBase
         }
     }
 
-    [HttpGet("name/{authorName}")]
-    public async Task<ActionResult<Author>> GetAuthor(string authorName)
+    [HttpGet("search/{searchParameter}")]
+    public async Task<ActionResult<AuthorDTO_NestedBooks>> GetAuthor(string searchParameter, [FromQuery] string searchProperty = "Name")
     {
         try
         {
-            var author = await _authorService.GetAuthor(authorName);
+            var author = await _authorService.GetAuthor(searchParameter);
             return Ok(author);
         }
         catch (Exception e)
         {
             if (e is ArgumentNullException)
             {
-                return NotFound($"Author with name {authorName} not found");
+                return NotFound($"Author with name {searchParameter} not found");
             }
             return BadRequest(e.Message);
         }
     }
 
     [HttpPost, Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Author>> AddAuthor(AuthorDTO authorDTO)
+    public async Task<ActionResult<AuthorDTO_NestedBooks>> AddAuthor(AuthorDTO authorDTO)
     {
         var author = _mapper.Map<Author>(authorDTO);
         try
@@ -92,7 +92,7 @@ public class AuthorController : ControllerBase
     }
 
     [HttpPut, Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Book>> UpdateAuthor([FromBody] AuthorDTO authorDTO)
+    public async Task<ActionResult<AuthorDTO_NestedBooks>> UpdateAuthor([FromBody] AuthorDTO authorDTO)
     {
         var author = _mapper.Map<Author>(authorDTO);
         try
@@ -107,7 +107,7 @@ public class AuthorController : ControllerBase
     }
 
     [HttpDelete("{id}"), Authorize(Roles = "Admin")]
-    public async Task<ActionResult<AuthorDTO>> DeleteAuthor(int id)
+    public async Task<ActionResult<AuthorDTO_NestedBooks>> DeleteAuthor(int id)
     {
         try
         {

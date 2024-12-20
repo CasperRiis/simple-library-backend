@@ -65,14 +65,15 @@ public class GenericService<T> where T : class //TODO: Change all calls to use n
         return item != null ? item : throw new ArgumentNullException(nameof(item));
     }
 
-    public async Task<T> GetItem(string itemName, string propertyName, params Expression<Func<T, object>>[]? includes)
+    public async Task<T> GetItem(string searchParameter, string searchProperty, params Expression<Func<T, object>>[]? includes)
     {
         IQueryable<T> query = IncludeProperties(includes!);
 
-        var property = typeof(T).GetProperty(propertyName)
-                            ?? throw new ArgumentNullException($"Property '{propertyName}' does not exist on type '{typeof(T).Name}'");
+        var property = typeof(T).GetProperty(searchProperty)
+                            ?? throw new ArgumentNullException($"Property '{searchProperty}' does not exist on type '{typeof(T).Name}'");
 
-        var item = await query.FirstOrDefaultAsync(a => a.GetType().GetProperty(propertyName)!.GetValue(a)!.ToString()!.ToLower().Contains(itemName.ToLower()));
+        var items = await query.ToListAsync();
+        var item = items.FirstOrDefault(a => property.GetValue(a)?.ToString()?.ToLower().Contains(searchParameter.ToLower()) == true);
         return item != null ? item : throw new ArgumentNullException(nameof(item));
     }
 
@@ -86,7 +87,7 @@ public class GenericService<T> where T : class //TODO: Change all calls to use n
         var propertyValue = property.GetValue(item)
                         ?? throw new ArgumentNullException($"Property '{propertyName}' value is null");
 
-        var items = await _context.Set<T>().ToListAsync();
+        var items = await query.ToListAsync();
         if (items.Any(a => property.GetValue(a)?.Equals(propertyValue) == true))
         {
             throw new Exception($"Item with same {propertyName} already exists");
@@ -98,8 +99,10 @@ public class GenericService<T> where T : class //TODO: Change all calls to use n
         return item;
     }
 
-    public async Task<T> UpdateItem(T item, string propertyName)
+    public async Task<T> UpdateItem(T item, string propertyName, params Expression<Func<T, object>>[]? includes)
     {
+        IQueryable<T> query = IncludeProperties(includes!);
+
         var property = typeof(T).GetProperty(propertyName)
                         ?? throw new ArgumentNullException($"Property '{propertyName}' does not exist on type '{typeof(T).Name}'");
 
@@ -112,13 +115,13 @@ public class GenericService<T> where T : class //TODO: Change all calls to use n
         var itemId = idProperty.GetValue(item)
                         ?? throw new ArgumentNullException($"Property 'Id' value is null");
 
-        var items = await _context.Set<T>().ToListAsync();
+        var items = await query.ToListAsync();
         if (items.Any(a => property.GetValue(a)?.Equals(propertyValue) == true && !idProperty.GetValue(a)?.Equals(itemId) == true))
         {
             throw new Exception($"Item with same {propertyName} and different id already exists");
         }
 
-        var dbItem = await _context.Set<T>().FindAsync(itemId);
+        var dbItem = await GetItem((int)itemId, includes);
         if (dbItem == null)
         {
             throw new ArgumentNullException(nameof(dbItem));
@@ -129,9 +132,9 @@ public class GenericService<T> where T : class //TODO: Change all calls to use n
         return dbItem;
     }
 
-    public async Task<T> DeleteItem(int id)
+    public async Task<T> DeleteItem(int id, params Expression<Func<T, object>>[]? includes)
     {
-        var item = await _context.Set<T>().FindAsync(id);
+        var item = await GetItem(id, includes);
         if (item == null)
         {
             throw new ArgumentNullException(nameof(item));

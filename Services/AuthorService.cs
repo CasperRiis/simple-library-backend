@@ -34,27 +34,31 @@ public class AuthorService : GenericService<Author>, IAuthorService
 
     public async Task<AuthorDTO_NestedBooks> GetAuthor(int id)
     {
-        var author = await base.GetItem(id, author => author.Books);
-        return _mapper.Map<AuthorDTO_NestedBooks>(author);
+        var returnAuthor = await base.GetItem(id, author => author.Books);
+        return _mapper.Map<AuthorDTO_NestedBooks>(returnAuthor);
     }
 
-    public async Task<Author> GetAuthor(string authorName)
+    public async Task<AuthorDTO_NestedBooks> GetAuthor(string searchParameter, string searchProperty = "Name")
     {
-        return await base.GetItem(authorName, "Name");
+        var returnAuthor = await base.GetItem(searchParameter, searchProperty, author => author.Books);
+        return _mapper.Map<AuthorDTO_NestedBooks>(returnAuthor);
     }
 
-    public async Task<Author> AddAuthor(Author author)
+    public async Task<AuthorDTO_NestedBooks> AddAuthor(Author author)
     {
-        return await base.AddItem(author, "Name");
+        var returnAuthor = await base.AddItem(author, "Name", author => author.Books);
+        return _mapper.Map<AuthorDTO_NestedBooks>(returnAuthor);
     }
 
-    public async Task<Author> DeleteAuthor(int authorId)
+    public async Task<AuthorDTO_NestedBooks> UpdateAuthor(Author author)
     {
-        return await base.DeleteItem(authorId);
+        var returnAuthor = await base.UpdateItem(author, "Name", author => author.Books);
+        return _mapper.Map<AuthorDTO_NestedBooks>(returnAuthor);
     }
 
-    public async Task<Author> UpdateAuthor(Author author)
+    public async Task<AuthorDTO_NestedBooks> DeleteAuthor(int authorId)
     {
-        return await base.UpdateItem(author, "Name");
+        var returnAuthor = await base.DeleteItem(authorId, author => author.Books);
+        return _mapper.Map<AuthorDTO_NestedBooks>(returnAuthor);
     }
 }

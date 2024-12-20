@@ -52,19 +52,19 @@ public class BookController : ControllerBase
         }
     }
 
-    [HttpGet("title/{bookTitle}")]
-    public async Task<ActionResult<BookDTO_NestedAuthor>> GetBook(string bookTitle)
+    [HttpGet("search/{searchParameter}")]
+    public async Task<ActionResult<BookDTO_NestedAuthor>> GetBook(string searchParameter, [FromQuery] string searchProperty = "Title")
     {
         try
         {
-            var book = await _bookService.GetBook(bookTitle);
+            var book = await _bookService.GetBook(searchParameter);
             return Ok(book);
         }
         catch (Exception e)
         {
             if (e is ArgumentNullException)
             {
-                return NotFound($"Book with title {bookTitle} not found");
+                return NotFound($"Book with title {searchParameter} not found");
             }
             return BadRequest(e.Message);
         }
@@ -92,7 +92,7 @@ public class BookController : ControllerBase
     }
 
     [HttpPut, Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Book>> UpdateBook([FromBody] BookDTO bookDTO)
+    public async Task<ActionResult<BookDTO_NestedAuthor>> UpdateBook([FromBody] BookDTO bookDTO)
     {
         var book = _mapper.Map<Book>(bookDTO);
         try
@@ -107,7 +107,7 @@ public class BookController : ControllerBase
     }
 
     [HttpDelete("{id}"), Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BookDTO>> DeleteBook(int id)
+    public async Task<ActionResult<BookDTO_NestedAuthor>> DeleteBook(int id)
     {
         try
         {
