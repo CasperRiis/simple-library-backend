@@ -18,7 +18,7 @@ public class AccountController : ControllerBase
         _service = service;
     }
 
-    [HttpGet("{AccountId}"), Authorize(Roles = "Admin")]
+    [HttpGet("{Id}"), Authorize(Roles = "Admin")]
     public async Task<ActionResult<Account>> GetAccount(int AccountId)
     {
         Account account = await _service.GetAccount(AccountId);
@@ -61,7 +61,7 @@ public class AccountController : ControllerBase
         }
     }
 
-    [HttpDelete("{AccountId}"), Authorize(Roles = "Admin")]
+    [HttpDelete("{Id}"), Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteAccount(int AccountId)
     {
         try
