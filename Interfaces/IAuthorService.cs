@@ -5,7 +5,7 @@ namespace LibraryApi.Interfaces
 {
     public interface IAuthorService
     {
-        Task<PagedList<Author>> GetAuthors(int page, int pageSize, string? searchParameter, string searchProperty = "Name");
+        Task<PagedList<AuthorDTO_NestedBooks>> GetAuthors(int page, int pageSize, string? searchParameter, string searchProperty = "Name");
         Task<AuthorDTO_NestedBooks> GetAuthor(int id);
         Task<Author> GetAuthor(string authorName);
         Task<Author> AddAuthor(Author author);

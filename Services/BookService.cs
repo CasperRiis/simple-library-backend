@@ -17,9 +17,18 @@ public class BookService : GenericService<Book>, IBookService
         _mapper = mapper;
     }
 
-    public async Task<PagedList<Book>> GetBooks(int page, int pageSize, string? searchParameter, string searchProperty = "Genre")
+    public async Task<PagedList<BookDTO_NestedAuthor>> GetBooks(int page, int pageSize, string? searchParameter, string searchProperty = "Genre")
     {
-        return await base.GetItems(page, pageSize, searchParameter, searchProperty);
+        var books = await base.GetItems(page, pageSize, searchParameter, searchProperty, book => book.Author!);
+
+        var mappedBooks = books.Results!.Select(book => _mapper.Map<BookDTO_NestedAuthor>(book)).ToList();
+
+        return new PagedList<BookDTO_NestedAuthor>
+        {
+            Count = books.Count,
+            Results = mappedBooks,
+            Next = books.Next
+        };
     }
 
     public async Task<BookDTO_NestedAuthor> GetBook(int id)

@@ -21,7 +21,7 @@ public class AuthorController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAuthors([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchParameter = null, [FromQuery] string searchProperty = "Name")
+    public async Task<ActionResult<AuthorDTO_NestedBooks>> GetAuthors([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchParameter = null, [FromQuery] string searchProperty = "Name")
     {
         try
         {

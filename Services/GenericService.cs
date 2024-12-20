@@ -15,6 +15,38 @@ public class GenericService<T> where T : class //TODO: Change all calls to use n
         _context = context;
     }
 
+    public async Task<PagedList<T>> GetItems(int page, int pageSize, string? searchParameter, string searchProperty, params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = _context.Set<T>();
+
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+
+        var property = typeof(T).GetProperty(searchProperty)
+                            ?? throw new ArgumentNullException($"Property '{searchProperty}' does not exist on type '{typeof(T).Name}'");
+
+        if (!string.IsNullOrEmpty(searchParameter))
+        {
+            query = query.Where(a => EF.Property<string>(a, searchProperty).Contains(searchParameter));
+        }
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var nextPage = items.Count == pageSize ? (int?)page + 1 : null;
+
+        return new PagedList<T>
+        {
+            Count = items.Count,
+            Results = items,
+            Next = nextPage
+        };
+    }
+
     public async Task<PagedList<T>> GetItems(int page, int pageSize, string? searchParameter, string searchProperty)
     {
         var property = typeof(T).GetProperty(searchProperty)

@@ -18,9 +18,18 @@ public class AuthorService : GenericService<Author>, IAuthorService
         _mapper = mapper;
     }
 
-    public async Task<PagedList<Author>> GetAuthors(int page, int pageSize, string? searchParameter, string searchProperty = "Name")
+    public async Task<PagedList<AuthorDTO_NestedBooks>> GetAuthors(int page, int pageSize, string? searchParameter, string searchProperty = "Name")
     {
-        return await base.GetItems(page, pageSize, searchParameter, searchProperty);
+        var authors = await base.GetItems(page, pageSize, searchParameter, searchProperty, author => author.Books); ;
+
+        var mappedAuthors = authors.Results!.Select(author => _mapper.Map<AuthorDTO_NestedBooks>(author)).ToList();
+
+        return new PagedList<AuthorDTO_NestedBooks>
+        {
+            Count = authors.Count,
+            Results = mappedAuthors,
+            Next = authors.Next
+        };
     }
 
     public async Task<AuthorDTO_NestedBooks> GetAuthor(int id)
