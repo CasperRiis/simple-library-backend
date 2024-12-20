@@ -21,24 +21,55 @@ builder.Services.AddAutoMapper(typeof(Program)); //AutoMapper configuration
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-string connectionString;
+var connectionStrings = new List<string>();
 string jwtTokenSecret;
 
 if (builder.Environment.IsDevelopment()) //pull secrets from local storage or Azure configuration
 {
-    connectionString = builder.Configuration.GetValue<string>("MYSQL_CONNECTION_STRING") ?? throw new ArgumentNullException();
+    connectionStrings.Add(builder.Configuration.GetValue<string>("MYSQL_CONNECTION_STRING") ?? throw new ArgumentNullException());
+    connectionStrings.Add(builder.Configuration.GetValue<string>("MYSQL_CONNECTION_STRING_DOCKER") ?? throw new ArgumentNullException());
     jwtTokenSecret = builder.Configuration.GetValue<string>("JWT_TOKEN_SECRET") ?? throw new ArgumentNullException();
 }
 else
 {
-    connectionString = Environment.GetEnvironmentVariable("MYSQL_CONNECTION_STRING") ?? throw new ArgumentNullException();
+    connectionStrings.Add(Environment.GetEnvironmentVariable("MYSQL_CONNECTION_STRING") ?? throw new ArgumentNullException());
     jwtTokenSecret = Environment.GetEnvironmentVariable("JWT_TOKEN_SECRET") ?? throw new ArgumentNullException();
+}
+
+string? connectionString = null;
+bool connected = false;
+
+foreach (var connStr in connectionStrings)
+{
+    try
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<DatabaseContext>();
+        optionsBuilder.UseMySql(connStr, ServerVersion.AutoDetect(connStr));
+
+        using (var context = new DatabaseContext(optionsBuilder.Options))
+        {
+            if (context.Database.CanConnect())
+            {
+                connectionString = connStr;
+                connected = true;
+                break;
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Failed to connect using connection string: {connStr}. Error: {ex.Message}");
+    }
+}
+
+if (!connected)
+{
+    throw new Exception("Failed to connect to any database.");
 }
 
 builder.Services.AddDbContext<DatabaseContext>(options =>
 {
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-    //options.UseSqlServer(connectionString);
 });
 
 builder.Services.AddScoped<IAccountService, AccountService>();
