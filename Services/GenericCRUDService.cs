@@ -3,7 +3,7 @@ using LibraryApi.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace LibraryApi.Managers;
+namespace LibraryApi.Services;
 
 public class GenericCRUDService<T> where T : class
 {

@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Text;
 using LibraryApi.Helpers;
-using LibraryApi.Managers;
+using LibraryApi.Services;
 using LibraryApi.Entities;
 using LibraryApi.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

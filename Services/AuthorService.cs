@@ -5,7 +5,7 @@ using LibraryApi.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 
-namespace LibraryApi.Managers;
+namespace LibraryApi.Services;
 
 public class AuthorService : GenericCRUDService<Author>, IAuthorService
 {

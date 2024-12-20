@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using LibraryApi.Helpers;
 using LibraryApi.Models;
 
-namespace LibraryApi.Managers;
+namespace LibraryApi.Services;
 
 public class AccountService : GenericCRUDService<Account>, IAccountService
 {
