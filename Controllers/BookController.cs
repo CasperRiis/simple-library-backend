@@ -57,7 +57,7 @@ public class BookController : ControllerBase
     {
         try
         {
-            var book = await _bookService.GetBook(searchParameter);
+            var book = await _bookService.GetBook(searchParameter, searchProperty);
             return Ok(book);
         }
         catch (Exception e)

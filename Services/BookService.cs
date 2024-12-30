@@ -8,12 +8,12 @@ namespace LibraryApi.Services;
 
 public class BookService : GenericCRUDService<Book>, IBookService
 {
-    private readonly DatabaseContext _context;
+    private readonly IDbContextFactory<DatabaseContext> _contextFactory;
     private readonly IMapper _mapper;
 
-    public BookService(DatabaseContext context, IMapper mapper) : base(context)
+    public BookService(IDbContextFactory<DatabaseContext> contextFactory, IMapper mapper) : base(contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
         _mapper = mapper;
     }
 
@@ -21,7 +21,7 @@ public class BookService : GenericCRUDService<Book>, IBookService
     {
         var books = await base.GetItems(page, pageSize, searchParameter, searchProperty, book => book.Author!);
 
-        var mappedBooks = books.Results!.Select(book => _mapper.Map<BookDTO_NestedAuthor>(book)).ToList();
+        var mappedBooks = books.Results!.Select(_mapper.Map<BookDTO_NestedAuthor>).ToList();
 
         return new PagedList<BookDTO_NestedAuthor>
         {
@@ -45,7 +45,9 @@ public class BookService : GenericCRUDService<Book>, IBookService
 
     public async Task<BookDTO_NestedAuthor> AddBook(Book book)
     {
-        if (await _context.Authors.FindAsync(book.AuthorId) == null)
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        if (await context.Authors.FindAsync(book.AuthorId) == null)
         {
             throw new ArgumentException($"Author with id '{book.AuthorId}' does not exist");
         }
@@ -53,9 +55,19 @@ public class BookService : GenericCRUDService<Book>, IBookService
         return _mapper.Map<BookDTO_NestedAuthor>(returnBook);
     }
 
+    public async Task<BookDTO_NestedAuthor> AddBookNoLinq(Book book)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        //TODO: Implement AddBookNoLinq
+        return null;
+    }
+
     public async Task<BookDTO_NestedAuthor> UpdateBook(Book book)
     {
-        if (await _context.Authors.FindAsync(book.AuthorId) == null)
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        if (await context.Authors.FindAsync(book.AuthorId) == null)
         {
             throw new ArgumentException($"Author with id '{book.AuthorId}' does not exist");
         }

@@ -19,10 +19,10 @@ public class AccountController : ControllerBase
     }
 
     [HttpGet("{Id}"), Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Account>> GetAccount(int AccountId)
+    public async Task<ActionResult<Account>> GetAccount(int Id)
     {
-        Account account = await _service.GetAccount(AccountId);
-        if (account.Id == -1) return NotFound($"No account with ID '{AccountId}'");
+        Account account = await _service.GetAccount(Id);
+        if (account.Id == -1) return NotFound($"No account with ID '{Id}'");
         return Ok(account);
     }
 
@@ -62,11 +62,11 @@ public class AccountController : ControllerBase
     }
 
     [HttpDelete("{Id}"), Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteAccount(int AccountId)
+    public async Task<IActionResult> DeleteAccount(int Id)
     {
         try
         {
-            await _service.DeleteAccount(AccountId);
+            await _service.DeleteAccount(Id);
             return Ok();
         }
         catch (Exception e)

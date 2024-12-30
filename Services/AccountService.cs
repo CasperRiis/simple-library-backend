@@ -9,17 +9,19 @@ namespace LibraryApi.Services;
 public class AccountService : GenericCRUDService<Account>, IAccountService
 {
     private readonly AuthHelper _authHelper;
-    private readonly DatabaseContext _context;
+    private readonly IDbContextFactory<DatabaseContext> _contextFactory;
 
-    public AccountService(DatabaseContext context, AuthHelper authHelper) : base(context)
+    public AccountService(IDbContextFactory<DatabaseContext> contextFactory, AuthHelper authHelper) : base(contextFactory)
     {
+        _contextFactory = contextFactory;
         _authHelper = authHelper;
-        _context = context;
     }
 
     public async Task<IEnumerable<Account>> GetAccounts()
     {
-        return await _context.Accounts.ToListAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        return await context.Accounts.ToListAsync();
     }
 
     public async Task<Account> GetAccount(int AccountId)
@@ -29,34 +31,38 @@ public class AccountService : GenericCRUDService<Account>, IAccountService
 
     public async Task<Account> CreateAccount(AccountDTO accountDTO)
     {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
         if (string.IsNullOrEmpty(accountDTO.Username))
             throw new ArgumentException("Username is null or empty.", nameof(accountDTO.Username));
 
         if (string.IsNullOrEmpty(accountDTO.Password))
             throw new ArgumentException("Password is null or empty.", nameof(accountDTO.Password));
 
-        if (_context.Accounts.Count(a => a.Username == accountDTO.Username) > 0)
+        if (context.Accounts.Count(a => a.Username == accountDTO.Username) > 0)
             throw new Exception("Account with username already exists.");
 
         //Ensure that no user created through API is admin
         accountDTO.IsAdmin = false;
 
         var account = accountDTO.Adapt();
-        var result = _context.Accounts.Add(account);
-        await _context.SaveChangesAsync();
+        var result = context.Accounts.Add(account);
+        await context.SaveChangesAsync();
 
         return result.Entity;
     }
 
     public async Task<Account> UpdateAccount(AccountDTO accountDTO)
     {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
         var account = accountDTO.Adapt();
-        if (_context.Accounts.Count(a => a.Username == account.Username && a.Id != account.Id) > 0)
+        if (context.Accounts.Count(a => a.Username == account.Username && a.Id != account.Id) > 0)
         {
             throw new Exception("Account with this username already exists.");
         }
 
-        var dbAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == account.Id);
+        var dbAccount = await context.Accounts.FirstOrDefaultAsync(a => a.Id == account.Id);
         if (dbAccount != null)
         {
             if (account.Username != null)
@@ -73,7 +79,7 @@ public class AccountService : GenericCRUDService<Account>, IAccountService
             }
             dbAccount.IsAdmin = account.IsAdmin;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             return dbAccount;
         }
 
@@ -82,7 +88,9 @@ public class AccountService : GenericCRUDService<Account>, IAccountService
 
     public async Task<string> Login(AccountDTO loginRequest)
     {
-        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Username == loginRequest.Username) ?? throw new Exception("Invalid credentials.");
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        var account = await context.Accounts.FirstOrDefaultAsync(a => a.Username == loginRequest.Username) ?? throw new Exception("Invalid credentials.");
         if (!_authHelper.VerifyPasswordHash(loginRequest.Password!, account.PasswordHash!, account.PasswordSalt!))
         {
             throw new Exception("Invalid credentials.");

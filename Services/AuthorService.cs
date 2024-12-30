@@ -9,12 +9,12 @@ namespace LibraryApi.Services;
 
 public class AuthorService : GenericCRUDService<Author>, IAuthorService
 {
-    private readonly DatabaseContext _context;
+    private readonly IDbContextFactory<DatabaseContext> _contextFactory;
     private readonly IMapper _mapper;
 
-    public AuthorService(DatabaseContext context, IMapper mapper) : base(context)
+    public AuthorService(IDbContextFactory<DatabaseContext> contextFactory, IMapper mapper) : base(contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
         _mapper = mapper;
     }
 
@@ -22,7 +22,7 @@ public class AuthorService : GenericCRUDService<Author>, IAuthorService
     {
         var authors = await base.GetItems(page, pageSize, searchParameter, searchProperty, author => author.Books); ;
 
-        var mappedAuthors = authors.Results!.Select(author => _mapper.Map<AuthorDTO_NestedBooks>(author)).ToList();
+        var mappedAuthors = authors.Results!.Select(_mapper.Map<AuthorDTO_NestedBooks>).ToList();
 
         return new PagedList<AuthorDTO_NestedBooks>
         {

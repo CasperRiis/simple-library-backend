@@ -7,16 +7,18 @@ namespace LibraryApi.Services;
 
 public class GenericCRUDService<T> where T : class
 {
-    private readonly DatabaseContext _context;
+    private readonly IDbContextFactory<DatabaseContext> _contextFactory;
 
-    public GenericCRUDService(DatabaseContext context)
+    public GenericCRUDService(IDbContextFactory<DatabaseContext> contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
     private IQueryable<T> IncludeProperties(params Expression<Func<T, object>>[] includes)
     {
-        IQueryable<T> query = _context.Set<T>();
+        var context = _contextFactory.CreateDbContext();
+
+        IQueryable<T> query = context.Set<T>();
 
         if (includes != null)
         {
@@ -78,6 +80,8 @@ public class GenericCRUDService<T> where T : class
 
     public async Task<T> AddItem(T item, string propertyName, params Expression<Func<T, object>>[]? includes)
     {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
         IQueryable<T> query = IncludeProperties(includes!);
 
         var property = typeof(T).GetProperty(propertyName)
@@ -92,14 +96,16 @@ public class GenericCRUDService<T> where T : class
             throw new Exception($"Item with same {propertyName} already exists");
         }
 
-        _context.Set<T>().Add(item);
-        await _context.SaveChangesAsync();
+        context.Set<T>().Add(item);
+        await context.SaveChangesAsync();
 
         return item;
     }
 
     public async Task<T> UpdateItem(T item, string propertyName, params Expression<Func<T, object>>[]? includes)
     {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
         IQueryable<T> query = IncludeProperties(includes!);
 
         var property = typeof(T).GetProperty(propertyName)
@@ -126,20 +132,22 @@ public class GenericCRUDService<T> where T : class
             throw new ArgumentNullException(nameof(dbItem));
         }
 
-        _context.Entry(dbItem).CurrentValues.SetValues(item);
-        await _context.SaveChangesAsync();
+        context.Entry(dbItem).CurrentValues.SetValues(item);
+        await context.SaveChangesAsync();
         return dbItem;
     }
 
     public async Task<T> DeleteItem(int id, params Expression<Func<T, object>>[]? includes)
     {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
         var item = await GetItem(id, includes);
         if (item == null)
         {
             throw new ArgumentNullException(nameof(item));
         }
-        _context.Set<T>().Remove(item);
-        await _context.SaveChangesAsync();
+        context.Set<T>().Remove(item);
+        await context.SaveChangesAsync();
 
         return item;
     }

@@ -67,7 +67,7 @@ if (!connected)
     throw new Exception("Failed to connect to any database.");
 }
 
-builder.Services.AddDbContext<DatabaseContext>(options =>
+builder.Services.AddDbContextFactory<DatabaseContext>(options =>
 {
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
 });
@@ -113,12 +113,13 @@ builder.Services.AddAuthentication(cfg =>
 builder.Services.AddScoped(sp => new AuthHelper(jwtTokenSecret));
 
 builder.Services.AddCors(options =>
-{
+{ //TODO Fix this
     options.AddDefaultPolicy(
         builder => builder
             .AllowAnyOrigin()
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+    );
 });
 
 var app = builder.Build();
@@ -170,6 +171,7 @@ app.UseHttpsRedirection();
 
 app.UseCors();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
