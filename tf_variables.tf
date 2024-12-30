@@ -17,3 +17,7 @@ variable "database_name" {
 variable "jwt_token_secret" {
   type = string
 }
+
+variable "zip_deploy_file_path" {
+  type = string
+}

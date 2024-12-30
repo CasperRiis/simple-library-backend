@@ -22,11 +22,30 @@ resource "azurerm_windows_web_app" "main" {
     type = "SystemAssigned"
   }
 
+  zip_deploy_file = var.zip_deploy_file_path
   #ENVIRONMENT VARIABLE
   app_settings = {
-    "ASPNETCORE_ENVIRONMENT"  = "Production"
-    "MYSQL_CONNECTION_STRING" = local.mysql_connection_string
-    "JWT_TOKEN_SECRET"        = var.jwt_token_secret
+    "WEBSITE_RUN_FROM_PACKAGE" = "1",
+    "ASPNETCORE_ENVIRONMENT"   = "Production"
+    "MYSQL_CONNECTION_STRING"  = local.mysql_connection_string
+    "JWT_TOKEN_SECRET"         = var.jwt_token_secret
+  }
+
+  logs {
+    application_logs {
+      file_system_level = "Information"
+    }
+
+    http_logs {
+      file_system {
+        retention_in_mb   = 100
+        retention_in_days = 7
+      }
+    }
+
+    detailed_error_messages = true
+
+    failed_request_tracing = true
   }
 }
 

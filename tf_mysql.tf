@@ -18,8 +18,17 @@ resource "azurerm_mysql_flexible_database" "main" {
   collation           = "utf8_unicode_ci"
 }
 
+#Allow all IPs
+resource "azurerm_mysql_flexible_server_firewall_rule" "allow_all_ips" {
+  name                = "allow_all_ips"
+  resource_group_name = azurerm_resource_group.main.name
+  server_name         = azurerm_mysql_flexible_server.main.name
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "255.255.255.255"
+}
+
 locals {
-  mysql_connection_string = "Server=${azurerm_mysql_flexible_server.main.fqdn};User=${var.sql_user};Password=${var.sql_password};Database=${var.database_name};"
+  mysql_connection_string = "server=${azurerm_mysql_flexible_server.main.fqdn};port=3306;database=${var.database_name};uid=${var.sql_user};pwd=${var.sql_password}"
 }
 
 output "mysql_connection_string" {
