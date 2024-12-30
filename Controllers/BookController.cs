@@ -76,7 +76,7 @@ public class BookController : ControllerBase
         var book = _mapper.Map<Book>(bookDTO);
         try
         {
-            var createdBook = await _bookService.AddBook(book);
+            var createdBook = await _bookService.AddBookGeneric(book);
             string host = HttpContext.Request.Host.Value;
             string uri = $"{Request.Path}/{createdBook.Id}";
             return Created(uri, createdBook);
@@ -84,6 +84,48 @@ public class BookController : ControllerBase
         catch (Exception e)
         {
             if (e.Message.Contains($"Book with title {book.Title} already exists"))
+            {
+                return Conflict(e.Message);
+            }
+            return BadRequest(e.Message);
+        }
+    }
+
+    [HttpPost("Framework"), Authorize(Roles = "Admin")]
+    public async Task<ActionResult<BookDTO_NestedAuthor>> AddBookFramework(BookDTO bookDTO)
+    {
+        var book = _mapper.Map<Book>(bookDTO);
+        try
+        {
+            var createdBook = await _bookService.AddBookFramework(book);
+            string host = HttpContext.Request.Host.Value;
+            string uri = $"{Request.Path}/{createdBook.Id}";
+            return Created(uri, createdBook);
+        }
+        catch (Exception e)
+        {
+            if (e.Message.Contains($"already exists"))
+            {
+                return Conflict(e.Message);
+            }
+            return BadRequest(e.Message);
+        }
+    }
+
+    [HttpPost("SQL"), Authorize(Roles = "Admin")]
+    public async Task<ActionResult<BookDTO_NestedAuthor>> AddBookSQL(BookDTO bookDTO)
+    {
+        var book = _mapper.Map<Book>(bookDTO);
+        try
+        {
+            var createdBook = await _bookService.AddBookSQL(book);
+            string host = HttpContext.Request.Host.Value;
+            string uri = $"{Request.Path}/{createdBook.Id}";
+            return Created(uri, createdBook);
+        }
+        catch (Exception e)
+        {
+            if (e.Message.Contains($"already exists"))
             {
                 return Conflict(e.Message);
             }
