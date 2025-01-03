@@ -133,6 +133,8 @@ public class GenericCRUDService<T> where T : class
         }
 
         context.Entry(dbItem).CurrentValues.SetValues(item);
+        context.Entry(dbItem).State = EntityState.Modified;
+
         await context.SaveChangesAsync();
         return dbItem;
     }
