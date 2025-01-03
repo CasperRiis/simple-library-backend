@@ -26,6 +26,18 @@ public class BookController : ControllerBase
         try
         {
             var books = await _bookService.GetBooks(page, pageSize, searchParameter, searchProperty);
+
+            // Return un-altered object if user is an Admin
+            if (IsUserRole("Admin"))
+            {
+                return Ok(books);
+            }
+
+            if (books.Results != null)
+            {
+                books.Results = books.Results.Where(b => !b.IsHidden).ToList();
+            }
+
             return Ok(books);
         }
         catch (Exception e)
@@ -40,6 +52,17 @@ public class BookController : ControllerBase
         try
         {
             var book = await _bookService.GetBook(id);
+
+            if (IsUserRole("Admin"))
+            {
+                return Ok(book);
+            }
+
+            if (book.IsHidden)
+            {
+                return NotFound($"Book with id '{book.Id}' is hidden");
+            }
+
             return Ok(book);
         }
         catch (Exception e)
@@ -58,6 +81,17 @@ public class BookController : ControllerBase
         try
         {
             var book = await _bookService.GetBook(searchParameter, searchProperty);
+
+            if (IsUserRole("Admin"))
+            {
+                return Ok(book);
+            }
+
+            if (book.IsHidden)
+            {
+                return NotFound($"Book with id '{book.Id}' is hidden");
+            }
+
             return Ok(book);
         }
         catch (Exception e)
@@ -139,6 +173,7 @@ public class BookController : ControllerBase
         var book = _mapper.Map<Book>(bookDTO);
         try
         {
+            // We don't need to check if the book is hidden here because it's only available to Admins
             var updatedBook = await _bookService.UpdateBook(book);
             return Ok(updatedBook);
         }
@@ -160,5 +195,21 @@ public class BookController : ControllerBase
         {
             return BadRequest(e.Message);
         }
+    }
+
+    private bool IsUserRole(string role)
+    {
+        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        if (token != null)
+        {
+            var jwtToken = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(token);
+            var userRoles = jwtToken.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+
+            if (userRoles.Contains(role))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
