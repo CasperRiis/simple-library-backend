@@ -128,6 +128,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+    var imageService = scope.ServiceProvider.GetRequiredService<IImageService>();
     var retryCount = 5;
     var delay = TimeSpan.FromSeconds(10);
 
@@ -136,7 +137,7 @@ using (var scope = app.Services.CreateScope())
         try
         {
             dbContext.Database.Migrate(); //Auto perform migrations
-            DbSeeder.UpsertSeed(dbContext); //Auto seed database
+            await DbSeeder.UpsertSeedAsync(dbContext, imageService); //Auto seed database
             break;
         }
         catch (SqlException)
