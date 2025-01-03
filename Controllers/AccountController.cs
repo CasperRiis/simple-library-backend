@@ -4,6 +4,7 @@ using LibraryApi.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using LibraryApi.Models;
 using AutoMapper;
+using LibraryApi.RequestModels;
 
 namespace FadeFactory_Account.Controllers;
 
@@ -12,10 +13,12 @@ namespace FadeFactory_Account.Controllers;
 public class AccountController : ControllerBase
 {
     private readonly IAccountService _service;
+    private readonly IMapper _mapper;
 
-    public AccountController(IAccountService service)
+    public AccountController(IAccountService service, IMapper mapper)
     {
         _service = service;
+        _mapper = mapper;
     }
 
     [HttpGet("{Id}"), Authorize(Roles = "Admin")]
@@ -41,8 +44,10 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<Account>> CreateAccount(AccountDTO account)
+    public async Task<ActionResult<Account>> CreateAccount(AccountRequest request)
     {
+        var account = _mapper.Map<AccountDTO>(request);
+
         try
         {
             var createdAccount = await _service.CreateAccount(account);
@@ -90,11 +95,13 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<string>> Login(AccountDTO request)
+    public async Task<ActionResult<string>> Login(AccountRequest request)
     {
+        var account = _mapper.Map<AccountDTO>(request);
+
         try
         {
-            string token = await _service.Login(request);
+            string token = await _service.Login(account);
             return Ok(token);
         }
         catch (Exception ex)

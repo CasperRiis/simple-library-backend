@@ -22,5 +22,7 @@ public class MappingProfile : Profile
 
         CreateMap<BookRequest, Book>()
             .ForMember(dest => dest.ImageUrl, opt => opt.Ignore());
+
+        CreateMap<AccountRequest, AccountDTO>();
     }
 }
