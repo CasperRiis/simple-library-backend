@@ -143,11 +143,20 @@ public class BookController : ControllerBase
     }
 
     [HttpPost("Framework"), Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BookDTO_NestedAuthor>> AddBookFramework(BookDTO bookDTO)
+    public async Task<ActionResult<BookDTO_NestedAuthor>> AddBookFramework(BookRequest bookRequest)
     {
-        var book = _mapper.Map<Book>(bookDTO);
+        var book = _mapper.Map<Book>(bookRequest);
         try
         {
+            if (bookRequest.Image != null)
+            {
+                using (var stream = bookRequest.Image.OpenReadStream())
+                {
+                    var imageUrl = await _imageService.UploadImageAsync(stream, bookRequest.Image.FileName);
+                    book.ImageUrl = imageUrl;
+                }
+            }
+
             var createdBook = await _bookService.AddBookFramework(book);
             string host = HttpContext.Request.Host.Value;
             string uri = $"{Request.Path}/{createdBook.Id}";
@@ -155,6 +164,11 @@ public class BookController : ControllerBase
         }
         catch (Exception e)
         {
+            if (!string.IsNullOrEmpty(book.ImageUrl))
+            {
+                await _imageService.DeleteImageAsync(book.ImageUrl);
+            }
+
             if (e.Message.Contains($"already exists"))
             {
                 return Conflict(e.Message);
@@ -164,11 +178,20 @@ public class BookController : ControllerBase
     }
 
     [HttpPost("SQL"), Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BookDTO_NestedAuthor>> AddBookSQL(BookDTO bookDTO)
+    public async Task<ActionResult<BookDTO_NestedAuthor>> AddBookSQL(BookRequest bookRequest)
     {
-        var book = _mapper.Map<Book>(bookDTO);
+        var book = _mapper.Map<Book>(bookRequest);
         try
         {
+            if (bookRequest.Image != null)
+            {
+                using (var stream = bookRequest.Image.OpenReadStream())
+                {
+                    var imageUrl = await _imageService.UploadImageAsync(stream, bookRequest.Image.FileName);
+                    book.ImageUrl = imageUrl;
+                }
+            }
+
             var createdBook = await _bookService.AddBookSQL(book);
             string host = HttpContext.Request.Host.Value;
             string uri = $"{Request.Path}/{createdBook.Id}";
@@ -176,6 +199,11 @@ public class BookController : ControllerBase
         }
         catch (Exception e)
         {
+            if (!string.IsNullOrEmpty(book.ImageUrl))
+            {
+                await _imageService.DeleteImageAsync(book.ImageUrl);
+            }
+
             if (e.Message.Contains($"already exists"))
             {
                 return Conflict(e.Message);
