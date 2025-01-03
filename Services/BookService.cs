@@ -142,12 +142,6 @@ public class BookService : GenericCRUDService<Book>, IBookService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
 
-        var foundBook = await context.Books.FindAsync(book.Id);
-        if (foundBook == null || foundBook.IsHidden)
-        {
-            throw new ArgumentException($"Book with id '{book.Id}' does not exist or is hidden");
-        }
-
         if (await context.Authors.FindAsync(book.AuthorId) == null)
         {
             throw new ArgumentException($"Author with id '{book.AuthorId}' does not exist");
