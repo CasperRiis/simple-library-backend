@@ -21,6 +21,21 @@ public class BookService : GenericCRUDService<Book>, IBookService
     {
         var books = await base.GetItems(page, pageSize, searchParameter, searchProperty, book => book.Author!);
 
+        var booksToRemove = new List<Book>();
+
+        foreach (var book in books.Results!)
+        {
+            if (book.IsHidden)
+            {
+                booksToRemove.Add(book);
+            }
+        }
+
+        foreach (var book in booksToRemove)
+        {
+            books.Results.Remove(book);
+        }
+
         var mappedBooks = books.Results!.Select(_mapper.Map<BookDTO_NestedAuthor>).ToList();
 
         return new PagedList<BookDTO_NestedAuthor>
@@ -34,12 +49,20 @@ public class BookService : GenericCRUDService<Book>, IBookService
     public async Task<BookDTO_NestedAuthor> GetBook(int id)
     {
         var returnBook = await base.GetItem(id, book => book.Author!);
+        if (returnBook.IsHidden)
+        {
+            throw new ArgumentException($"Book with id '{returnBook.Id}' is hidden");
+        }
         return _mapper.Map<BookDTO_NestedAuthor>(returnBook);
     }
 
     public async Task<BookDTO_NestedAuthor> GetBook(string searchParameter, string searchProperty = "Title")
     {
         var returnBook = await base.GetItem(searchParameter, searchProperty, book => book.Author!);
+        if (returnBook.IsHidden)
+        {
+            throw new ArgumentException($"Book with id '{returnBook.Id}' is hidden");
+        }
         return _mapper.Map<BookDTO_NestedAuthor>(returnBook);
     }
 

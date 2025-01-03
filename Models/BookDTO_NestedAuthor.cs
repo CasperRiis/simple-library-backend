@@ -7,6 +7,7 @@ public class BookDTO_NestedAuthor
     public string Title { get; set; } = string.Empty;
 
     public int AuthorId { get; set; }
+    public bool IsHidden { get; set; }
 
     public AuthorDTO? Author { get; set; }
 

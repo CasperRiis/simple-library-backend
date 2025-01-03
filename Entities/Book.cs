@@ -15,6 +15,7 @@ public class Book
 
     [Required]
     public int AuthorId { get; set; }
+    public bool IsHidden { get; set; }
 
     [ForeignKey("AuthorId")]
     public Author? Author { get; set; }
