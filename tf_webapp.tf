@@ -1,12 +1,3 @@
-
-resource "random_password" "jwt_token_secret" {
-  # Generate a random password for JWT token secret
-  # This is not used to maintain the same secret between runs and development environments
-  length           = 128
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
-}
-
 resource "azurerm_windows_web_app" "main" {
   name                = "simple-library-backend"
   resource_group_name = azurerm_resource_group.main.name
@@ -25,10 +16,12 @@ resource "azurerm_windows_web_app" "main" {
   zip_deploy_file = var.zip_deploy_file_path
   #ENVIRONMENT VARIABLE
   app_settings = {
-    "WEBSITE_RUN_FROM_PACKAGE" = "1",
-    "ASPNETCORE_ENVIRONMENT"   = "Production"
-    "MYSQL_CONNECTION_STRING"  = local.mysql_connection_string
-    "JWT_TOKEN_SECRET"         = var.jwt_token_secret
+    "WEBSITE_RUN_FROM_PACKAGE"       = "1",
+    "ASPNETCORE_ENVIRONMENT"         = "Production"
+    "MYSQL_CONNECTION_STRING"        = local.mysql_connection_string
+    "JWT_TOKEN_SECRET"               = var.jwt_token_secret
+    "AzureStorage__ConnectionString" = azurerm_storage_account.main.primary_connection_string
+    "AzureStorage__ContainerName"    = azurerm_storage_container.main.name
   }
 
   logs {

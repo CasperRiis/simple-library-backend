@@ -2,6 +2,7 @@ using AutoMapper;
 using LibraryApi.Entities;
 using LibraryApi.Interfaces;
 using LibraryApi.Models;
+using LibraryApi.RequestModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,11 +14,13 @@ public class BookController : ControllerBase
 {
     private readonly IBookService _bookService;
     private readonly IMapper _mapper;
+    private readonly IImageService _imageService;
 
-    public BookController(IBookService bookService, IMapper mapper)
+    public BookController(IBookService bookService, IMapper mapper, IImageService imageService)
     {
         _bookService = bookService;
         _mapper = mapper;
+        _imageService = imageService;
     }
 
     [HttpGet]
@@ -105,11 +108,20 @@ public class BookController : ControllerBase
     }
 
     [HttpPost, Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BookDTO_NestedAuthor>> AddBook(BookDTO bookDTO)
+    public async Task<ActionResult<BookDTO_NestedAuthor>> AddBook(BookRequest bookRequest)
     {
-        var book = _mapper.Map<Book>(bookDTO);
+        var book = _mapper.Map<Book>(bookRequest);
         try
         {
+            if (bookRequest.Image != null)
+            {
+                using (var stream = bookRequest.Image.OpenReadStream())
+                {
+                    var imageUrl = await _imageService.UploadImageAsync(stream, bookRequest.Image.FileName);
+                    book.ImageUrl = imageUrl;
+                }
+            }
+
             var createdBook = await _bookService.AddBookGeneric(book);
             string host = HttpContext.Request.Host.Value;
             string uri = $"{Request.Path}/{createdBook.Id}";
@@ -117,6 +129,11 @@ public class BookController : ControllerBase
         }
         catch (Exception e)
         {
+            if (!string.IsNullOrEmpty(book.ImageUrl))
+            {
+                await _imageService.DeleteImageAsync(book.ImageUrl);
+            }
+
             if (e.Message.Contains($"Book with title {book.Title} already exists"))
             {
                 return Conflict(e.Message);

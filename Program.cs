@@ -75,6 +75,7 @@ builder.Services.AddDbContextFactory<DatabaseContext>(options =>
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<IImageService, ImageService>();
 
 builder.Services.AddSwaggerGen(options =>
 {
