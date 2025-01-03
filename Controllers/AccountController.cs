@@ -52,9 +52,9 @@ public class AccountController : ControllerBase
         }
         catch (Exception ex)
         {
-            if (ex.Message.Contains("Account with username already exists."))
+            if (ex.Message.Contains("Account with email already exists."))
             {
-                return Conflict(new { message = "Username is already in use" });
+                return Conflict(new { message = "Email is already in use" });
             }
 
             return BadRequest(ex.Message);

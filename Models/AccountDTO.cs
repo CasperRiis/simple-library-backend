@@ -24,7 +24,7 @@ public class AccountDTO : BaseAccount
         return new Account
         {
             Id = Id,
-            Username = Username,
+            Email = Email,
             PasswordHash = passwordHash,
             PasswordSalt = passwordSalt,
             IsAdmin = IsAdmin

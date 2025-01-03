@@ -3,6 +3,7 @@ using LibraryApi.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using LibraryApi.Helpers;
 using LibraryApi.Models;
+using System.Text.RegularExpressions;
 
 namespace LibraryApi.Services;
 
@@ -33,14 +34,14 @@ public class AccountService : GenericCRUDService<Account>, IAccountService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
 
-        if (string.IsNullOrEmpty(accountDTO.Username))
-            throw new ArgumentException("Username is null or empty.", nameof(accountDTO.Username));
+        if (IsValidEmail(accountDTO.Email) == false)
+            throw new ArgumentException("Email is not valid.", nameof(accountDTO.Email));
 
         if (string.IsNullOrEmpty(accountDTO.Password))
             throw new ArgumentException("Password is null or empty.", nameof(accountDTO.Password));
 
-        if (context.Accounts.Count(a => a.Username == accountDTO.Username) > 0)
-            throw new Exception("Account with username already exists.");
+        if (context.Accounts.Count(a => a.Email == accountDTO.Email) > 0)
+            throw new Exception("Account with email already exists.");
 
         //Ensure that no user created through API is admin
         accountDTO.IsAdmin = false;
@@ -56,18 +57,22 @@ public class AccountService : GenericCRUDService<Account>, IAccountService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
 
+        if (IsValidEmail(accountDTO.Email) == false)
+            throw new ArgumentException("Email is not valid.", nameof(accountDTO.Email));
+
         var account = accountDTO.Adapt();
-        if (context.Accounts.Count(a => a.Username == account.Username && a.Id != account.Id) > 0)
+
+        if (context.Accounts.Count(a => a.Email == account.Email && a.Id != account.Id) > 0)
         {
-            throw new Exception("Account with this username already exists.");
+            throw new Exception("Account with this email already exists.");
         }
 
         var dbAccount = await context.Accounts.FirstOrDefaultAsync(a => a.Id == account.Id);
         if (dbAccount != null)
         {
-            if (account.Username != null)
+            if (account.Email != null)
             {
-                dbAccount.Username = account.Username;
+                dbAccount.Email = account.Email;
             }
             if (account.PasswordHash != null)
             {
@@ -90,7 +95,10 @@ public class AccountService : GenericCRUDService<Account>, IAccountService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
 
-        var account = await context.Accounts.FirstOrDefaultAsync(a => a.Username == loginRequest.Username) ?? throw new Exception("Invalid credentials.");
+        if (IsValidEmail(loginRequest.Email) == false)
+            throw new ArgumentException("Email is not valid.", nameof(loginRequest.Email));
+
+        var account = await context.Accounts.FirstOrDefaultAsync(a => a.Email == loginRequest.Email) ?? throw new Exception("Invalid credentials.");
         if (!_authHelper.VerifyPasswordHash(loginRequest.Password!, account.PasswordHash!, account.PasswordSalt!))
         {
             throw new Exception("Invalid credentials.");
@@ -101,5 +109,22 @@ public class AccountService : GenericCRUDService<Account>, IAccountService
     public async Task<Account> DeleteAccount(int AccountId)
     {
         return await base.DeleteItem(AccountId);
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        try
+        {
+            return Regex.IsMatch(email,
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+                RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return false;
+        }
     }
 }

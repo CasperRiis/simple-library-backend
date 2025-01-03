@@ -39,7 +39,7 @@ public class AuthHelper
         var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
-                new Claim(ClaimTypes.Name, account.Username!.ToString()),
+                new Claim(ClaimTypes.Name, account.Email!.ToString()),
                 new Claim(ClaimTypes.Role, account.IsAdmin ? "Admin" : "User")
             };
 

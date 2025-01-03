@@ -38,9 +38,8 @@ public static class DbSeeder
     public static void UpsertSeed(DatabaseContext context)
     {
         // Seed Accounts
-        UpsertAccount(context, new AccountDTO { Id = 1, Username = "string", IsAdmin = true, Password = "string" }.Adapt());
-        UpsertAccount(context, new AccountDTO { Id = 2, Username = "Admin", IsAdmin = true, Password = "Admin123" }.Adapt());
-        UpsertAccount(context, new AccountDTO { Id = 3, Username = "User", IsAdmin = false, Password = "User123" }.Adapt());
+        UpsertAccount(context, new AccountDTO { Id = 1, Email = "Admin@test.com", IsAdmin = true, Password = "Admin123" }.Adapt());
+        UpsertAccount(context, new AccountDTO { Id = 2, Email = "User@test.com", IsAdmin = false, Password = "User123" }.Adapt());
         context.SaveChanges();
 
         // Seed Authors
