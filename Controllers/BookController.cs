@@ -202,12 +202,16 @@ public class BookController : ControllerBase
         var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
         if (token != null)
         {
-            var jwtToken = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(token);
-            var userRoles = jwtToken.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
-
-            if (userRoles.Contains(role))
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            if (handler.CanReadToken(token))
             {
-                return true;
+                var jwtToken = handler.ReadJwtToken(token);
+                var userRoles = jwtToken.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+
+                if (userRoles.Contains(role))
+                {
+                    return true;
+                }
             }
         }
         return false;
