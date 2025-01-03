@@ -10,11 +10,13 @@ public class BookService : GenericCRUDService<Book>, IBookService
 {
     private readonly IDbContextFactory<DatabaseContext> _contextFactory;
     private readonly IMapper _mapper;
+    private readonly IImageService _imageService;
 
-    public BookService(IDbContextFactory<DatabaseContext> contextFactory, IMapper mapper) : base(contextFactory)
+    public BookService(IDbContextFactory<DatabaseContext> contextFactory, IMapper mapper, IImageService imageService) : base(contextFactory)
     {
         _contextFactory = contextFactory;
         _mapper = mapper;
+        _imageService = imageService;
     }
 
     public async Task<PagedList<BookDTO_NestedAuthor>> GetBooks(int page, int pageSize, string? searchParameter, string searchProperty = "Genre")
@@ -152,7 +154,16 @@ public class BookService : GenericCRUDService<Book>, IBookService
 
     public async Task<BookDTO_NestedAuthor> DeleteBook(int id)
     {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
         var returnBook = await base.DeleteItem(id, book => book.Author!);
+
+        // Delete image from blob storage if no other book is using it
+        if (!string.IsNullOrEmpty(returnBook.ImageUrl) && !context.Books.Any(b => b.ImageUrl == returnBook.ImageUrl))
+        {
+            await _imageService.DeleteImageAsync(returnBook.ImageUrl);
+        }
+
         return _mapper.Map<BookDTO_NestedAuthor>(returnBook);
     }
 }
