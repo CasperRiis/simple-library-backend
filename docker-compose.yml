@@ -4,10 +4,44 @@ services:
     container_name: simple-library-mysql
     environment:
       MYSQL_ROOT_PASSWORD: Password123
+      MYSQL_DATABASE: simple-library-db
+      MYSQL_USER: libraryUser
+      MYSQL_PASSWORD: libraryUserPassword 
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 
+  simple-library-azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: simple-library-azurite
+    hostname: azurite
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - azurite_data:/data
+
+  simple-library-app:
+    build: 
+      context: .
+      dockerfile: dockerfile-api
+    container_name: simple-library-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - simple-library-azurite
+      - simple-library-mysql
+    volumes:
+      - app-data:/app
+    environment:
+      - MYSQL_CONNECTION_STRING=Server=host.docker.internal;User=libraryUser;Password=libraryUserPassword;Database=simple-library-db;
+      - JWT_TOKEN_SECRET=
+      - AzureStorage__ConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+      - AzureStorage__ContainerName=simple-library-container
+
 volumes:
   mysql_data:
+  azurite_data:
+  app-data:  

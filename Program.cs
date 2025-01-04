@@ -41,24 +41,36 @@ bool connected = false;
 
 foreach (var connStr in connectionStrings)
 {
-    try
+    for (int attempt = 1; attempt <= 5; attempt++)
     {
-        var optionsBuilder = new DbContextOptionsBuilder<DatabaseContext>();
-        optionsBuilder.UseMySql(connStr, ServerVersion.AutoDetect(connStr));
-
-        using (var context = new DatabaseContext(optionsBuilder.Options))
+        try
         {
-            if (context.Database.CanConnect())
+            var optionsBuilder = new DbContextOptionsBuilder<DatabaseContext>();
+            optionsBuilder.UseMySql(connStr, ServerVersion.AutoDetect(connStr));
+
+            using (var context = new DatabaseContext(optionsBuilder.Options))
             {
-                connectionString = connStr;
-                connected = true;
-                break;
+                if (context.Database.CanConnect())
+                {
+                    connectionString = connStr;
+                    connected = true;
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Attempt {attempt}: Failed to connect using connection string: {connStr}. Error: {ex.Message}");
+            if (attempt < 5)
+            {
+                await Task.Delay(5000);
             }
         }
     }
-    catch (Exception ex)
+
+    if (connected)
     {
-        Console.WriteLine($"Failed to connect using connection string: {connStr}. Error: {ex.Message}");
+        break;
     }
 }
 

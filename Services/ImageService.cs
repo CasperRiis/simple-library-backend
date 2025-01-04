@@ -14,7 +14,8 @@ public class ImageService : IImageService
     }
 
     public async Task<string> UploadImageAsync(Stream imageStream, string fileName)
-    {    // Validate file type
+    {
+        // Validate file type
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
         string fileExtension = Path.GetExtension(fileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(fileExtension))
@@ -46,12 +47,12 @@ public class ImageService : IImageService
         // Return the URL of the existing image if it already exists
         if (await blobClient.ExistsAsync())
         {
-            return blobClient.Uri.ToString();
+            return blobClient.Uri.ToString().Replace("azurite", "localhost", StringComparison.OrdinalIgnoreCase);
         }
 
         // Upload the new image
         await blobClient.UploadAsync(imageStream, overwrite: true);
-        return blobClient.Uri.ToString();
+        return blobClient.Uri.ToString().Replace("azurite", "localhost", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task DeleteImageAsync(string imageUrl)
