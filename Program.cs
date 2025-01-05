@@ -126,13 +126,23 @@ builder.Services.AddAuthentication(cfg =>
 builder.Services.AddScoped(sp => new AuthHelper(jwtTokenSecret));
 
 builder.Services.AddCors(options =>
-{ //TODO Fix this
-    options.AddDefaultPolicy(
-        builder => builder
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-    );
+{
+    options.AddPolicy("DevelopmentCorsPolicy", builder =>
+    {
+        builder.WithOrigins(
+                "http://localhost:5173", // Vite dev server
+                "http://localhost:4173") // Vite preview server
+            .WithHeaders("Authorization", "Content-Type")
+            .AllowAnyMethod();
+    });
+
+    options.AddPolicy("ProductionCorsPolicy", builder =>
+    {
+        builder.WithOrigins(
+                "https://simple-library-frontend-mu.vercel.app") // Cloud deployment
+            .WithHeaders("Authorization", "Content-Type")
+            .AllowAnyMethod();
+    });
 });
 
 var app = builder.Build();
@@ -149,7 +159,7 @@ using (var scope = app.Services.CreateScope())
         try
         {
             dbContext.Database.Migrate(); //Auto perform migrations
-            await DbSeeder.UpsertSeedAsync(dbContext, imageService); //Auto seed database
+            await DbSeeder.UpsertSeedAsync(dbContext, imageService); //Auto seed database and image blob storage
             break;
         }
         catch (SqlException)
@@ -162,6 +172,7 @@ using (var scope = app.Services.CreateScope())
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseCors("DevelopmentCorsPolicy");
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -172,6 +183,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+    app.UseCors("ProductionCorsPolicy");
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -182,8 +194,6 @@ else
 }
 
 app.UseHttpsRedirection();
-
-app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
