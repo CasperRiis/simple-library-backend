@@ -26,8 +26,8 @@ string jwtTokenSecret;
 
 if (builder.Environment.IsDevelopment()) //pull secrets from local storage or Azure configuration
 {
-    connectionStrings.Add(builder.Configuration.GetValue<string>("MYSQL_CONNECTION_STRING") ?? throw new ArgumentNullException());
     connectionStrings.Add(builder.Configuration.GetValue<string>("MYSQL_CONNECTION_STRING_DOCKER") ?? throw new ArgumentNullException());
+    connectionStrings.Add(builder.Configuration.GetValue<string>("MYSQL_CONNECTION_STRING") ?? throw new ArgumentNullException());
     jwtTokenSecret = builder.Configuration.GetValue<string>("JWT_TOKEN_SECRET") ?? throw new ArgumentNullException();
 }
 else
